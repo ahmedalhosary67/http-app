@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import config from "./config.json";
+import http from "./sevcise/httpServcise"
 import "./App.css";
 
 class App extends Component {
@@ -6,16 +8,40 @@ class App extends Component {
     posts: []
   };
 
-  handleAdd = () => {
-    console.log("Add");
+  async componentDidMount() {
+    const { data: posts } = await http.get(config.apiEndPiont)
+    this.setState({ posts })
+  }
+
+  handleAdd = async () => {
+    const obj = { title: "a", body: "b" }
+    const { data: post } = await http.post(config.apiEndPiont, obj)
+    const posts = [post, ...this.state.posts]
+    this.setState({ posts })
   };
 
-  handleUpdate = post => {
-    console.log("Update", post);
+  handleUpdate = async post => {
+    post.title = "UPDATE"
+    await http.put(`${config.apiEndPiont}/${post.id}`, post);
+    const posts = this.state.posts;
+    this.setState({ posts })
   };
 
-  handleDelete = post => {
-    console.log("Delete", post);
+  handleDelete = async post => {
+    const originalPosts = this.state.posts
+
+    const posts = this.state.posts.filter(p => p.id !== post.id); // ui delete
+    this.setState({ posts })
+
+    try {
+      await http.delete(`${config.apiEndPiont}/${post.id}`) // delete from server
+
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404)
+        alert("page is already have been deleted!")
+
+      this.setState({ posts: originalPosts })
+    }
   };
 
   render() {
